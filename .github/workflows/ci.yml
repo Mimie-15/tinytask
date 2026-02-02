@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - master  # เพิ่มเพื่อให้ระบบทำงานไม่ว่าคุณจะใช้ชื่อ branch ไหน
+      - master
 
 jobs:
   build-and-test:
@@ -36,8 +36,8 @@ jobs:
         run: docker run -d -p 3000:3000 --name app tinytask
       - name: Smoke test
         run: |
-          sleep 5
-          curl -sf http://localhost:3000/health
+          sleep 10
+          curl -sf http://localhost:3000/health || exit 1
 
   deploy:
     needs: [build-and-test, docker-smoke-test]
