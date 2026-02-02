@@ -4,7 +4,6 @@ export interface Task {
   done: boolean;
 }
 
-// In-memory store
 let tasks: Task[] = [
   { id: 1, title: "Understand CI Stages", done: false },
   { id: 2, title: "Fix the Failing Test", done: false },
@@ -14,21 +13,14 @@ let nextId = 4;
 
 export const getTasks = (): Task[] => tasks;
 
-/**
- * Adds a new task.
- *
- * INTENTIONAL BUG: This function does not trim whitespace from the title.
- * A title with only spaces ("   ") is considered valid, but the test expects
- * it to be rejected. This is the bug for "Lab 1" in the README.
- */
 export const addTask = (title: string): Task | null => {
-  // BUG is here: does not use .trim()
-  if (!title) {
-    return null; // Reject empty titles
+  // ✅ FIXED: ใช้ .trim() เพื่อดักจับกรณีชื่อเป็นช่องว่าง (Lab 1 Bug)
+  if (!title || title.trim().length === 0) {
+    return null;
   }
   const newTask: Task = {
     id: nextId++,
-    title: title,
+    title: title.trim(),
     done: false,
   };
   tasks.push(newTask);
@@ -44,7 +36,16 @@ export const toggleTask = (id: number): Task | null => {
   return null;
 };
 
-// Function to reset tasks, useful for testing
+export const deleteTask = (id: number): boolean => {
+  // ✅ FIXED: เปิดใช้งานฟังก์ชันลบเพื่อให้ระบบทำงานสมบูรณ์
+  const taskIndex = tasks.findIndex((t) => t.id === id);
+  if (taskIndex > -1) {
+    tasks.splice(taskIndex, 1);
+    return true;
+  }
+  return false;
+};
+
 export const resetTasks = () => {
   tasks = [
     { id: 1, title: "Understand CI Stages", done: false },

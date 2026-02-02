@@ -13,8 +13,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// API Routes
-
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
@@ -25,45 +23,46 @@ app.get('/tasks', (req, res) => {
 
 app.post('/tasks', (req, res) => {
   const { title } = req.body;
-
   if (typeof title !== 'string') {
     return res.status(400).json({ message: 'Invalid title format' });
   }
-
-  // To check if title is empty or just a whitespace
-  // if (title.trim().length === 0) {
-  //     return res.status(400).json({ message: 'Title cannot be empty' });
-  // }
-
+  // ✅ ตรวจสอบค่าว่างเพื่อให้ Test ผ่าน
+  if (title.trim().length === 0) {
+    return res.status(400).json({ message: 'Title cannot be empty' });
+  }
   const newTask = taskStore.addTask(title);
-
   if (!newTask) {
     return res.status(400).json({ message: 'Error creating task' });
   }
-
   res.status(201).json(newTask);
 });
 
 app.patch('/tasks/:id/toggle', (req, res) => {
   const id = parseInt(req.params.id, 10);
   const updatedTask = taskStore.toggleTask(id);
-
   if (!updatedTask) {
     return res.status(404).json({ message: 'Task not found' });
   }
-
   res.json(updatedTask);
 });
 
-// Serve the frontend for any other route
+app.delete('/tasks/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const success = taskStore.deleteTask(id);
+  if (!success) {
+    return res.status(404).json({ message: 'Task not found' });
+  }
+  res.status(204).send();
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:3000`);
   });
 }
 
-export default app; // Export for testing
+export default app;

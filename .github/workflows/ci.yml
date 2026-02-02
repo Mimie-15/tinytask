@@ -1,0 +1,71 @@
+name: Node.js CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  docker-smoke-test:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t starterweb-taskboard:${{ github.sha }} .
+
+      - name: Run Docker container
+        run: docker run -d -p 3000:3000 --name taskboard-app starterweb-taskboard:${{ github.sha }}
+
+      - name: Smoke test with curl
+        run: |
+          echo "Waiting for container to start..."
+          for i in {1..10}; do
+            if curl -sf http://localhost:3000/health; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i failed. Retrying in 5 seconds..."
+            sleep 5
+          done
+          echo "Health check failed after 10 attempts."
+          exit 1
+
+      - name: Stop and remove container
+        if: always()
+        run: |
+          docker logs taskboard-app
+          docker stop taskboard-app
+          docker rm taskboard-app
